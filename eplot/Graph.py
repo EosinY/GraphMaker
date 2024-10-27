@@ -110,9 +110,8 @@ class GraphMaker():
         elif (ent[idx].color is None and ent[idx - 1].color is None) and idx > 0:
             i = idx if idx < len(self._colorscm) else idx % len(self._colorscm)
             return self._colorscm[i]
-        elif (ent[idx].color is not None or ent[idx - 1].color is not None) and idx > 0:
-            c = ent[idx].color if ent[idx].color is not None else ent[idx - 1].color
-            return c
+        elif (ent[idx].groupid == ent[idx - 1].groupid) and idx > 0:
+            return ent[idx - 1].color
         else:
             raise ("are you serious? my brain is gonna crash into fucking cream bruh(by me coding @2:30am)")
 
