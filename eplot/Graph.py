@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 from typing import Final, Union, Dict, List, Tuple
 from enum import Enum, unique
 
-import Colors
-import Legend
+from . import Colors
+from . import Legend
 
 
 @unique
@@ -15,6 +15,7 @@ class PointType(Enum):
     Square = "s"
     Cross = "x"
     Plus = "+"
+    Blank = ""
 
     def Value(e):
         return e.value
@@ -26,6 +27,7 @@ class LineType(Enum):
     Dash = "--"
     DashDot = "-."
     Dot = ":"
+    Blank = ""
 
     def Value(e):
         return e.value
@@ -52,8 +54,8 @@ class XY_PlotEntry:
             x_data: list, y_data: list, name: str, *,
             groupid: str = None,
             color: str = None,
-            point: Union[PointType, tuple[PointType, float]] = (PointType.Circle, 1),
-            line: Union[LineType, tuple[LineType, float]] = (LineType.Solid, 1.5),
+            point: Union[PointType, tuple[PointType, float]] = None,
+            line: Union[LineType, tuple[LineType, float]] = None,
             disable: bool = False):
 
         self.x_data = x_data
@@ -65,17 +67,21 @@ class XY_PlotEntry:
         self.disable = disable
 
         self.color = color
-        if point is PointType:
-            self.pointtype = point
+        self.pointtype = PointType.Blank if point is None and line is not None else PointType.Circle
+        self.pointsize = 4
+        if isinstance(point, PointType):
+            self.pointtype = self.pointtype.value if point is None else point.value
         else:
-            self.pointtype = point[0]
-            self.pointsize = point[1]
+            self.pointtype = self.pointtype.value if point is None else point[0].value
+            self.pointsize = self.pointsize if point is None else point[1]
 
-        if line is LineType:
-            self.linetype = line
+        self.linetype = LineType.Blank if line is None and point is not None else LineType.Solid
+        self.linewidth = 1.5
+        if isinstance(line, LineType):
+            self.linetype = self.linetype.value if line is None else line.value
         else:
-            self.linetype = line[0]
-            self.linewidth = line[1]
+            self.linetype = self.linetype.value if line is None else line[0].value
+            self.linewidth = self.linewidth if line is None else line[1]
 
 
 class XY2_PlotEntry(XY_PlotEntry):
@@ -86,29 +92,30 @@ class XY2_PlotEntry(XY_PlotEntry):
 
 
 class GraphMaker():
-    entries_xy: list[XY_PlotEntry]
-    entries_xy2: list[XY2_PlotEntry]
+    entries_xy: list[XY_PlotEntry] = []
+    entries_xy2: list[XY2_PlotEntry] = []
 
     _grid: tuple[bool] = (True, False)
     _margin: tuple[float] = (0.125, 0.875, 0.125, 0.9)
     _colorscm: List[str] = Colors.gnuplot_colors_1
 
     _fig = plt.figure()
-    _ax1 = _fig.add_subplot(111)
-    _ax2 = _ax1.twinx()
-    _leg = [(_ax1.get_legend_handles_labels()), (_ax2.get_legend_handles_labels())]
+    _ax1 = None
+    _ax2 = None
+    _leg_xy = None
+    _leg_xy2 = None
 
     def __init__(self, path: str):
         self.path = path
 
-    def _Int2AxisType(i: int, l: int) -> Union[tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]]:
+    def _Int2AxisType(self, i: int, l: int) -> Union[tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]]:
         al = []
         s = str(i)
         if len(s) < l:
             raise TypeError("axes type defining int digit is shorter than desired.")
 
         for j in range(l):
-            al.append(s[j])
+            al.append(AxisType.ToEnum(s[j]))
 
         return tuple(al)
 
@@ -125,42 +132,42 @@ class GraphMaker():
         else:
             raise ("are you serious? my brain is gonna crash into fucking cream bruh(by me coding @2:30am)")
 
-    def _SetXLimit(ax: plt.Axes, lower: float, upper: float) -> None:
+    def _SetXLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
         if upper is not None:
             ax.set_xlim(left=upper)
         if lower is not None:
             ax.set_xlim(right=lower)
 
-    def _SetYLimit(ax: plt.Axes, lower: float, upper: float) -> None:
+    def _SetYLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
         if upper is not None:
             ax.set_ylim(top=upper)
         if lower is not None:
             ax.set_ylim(bottom=lower)
 
-    def _SetManXTicks(ax: plt.Axes, xticks: Union[List[float], Dict[float, str]]):
+    def _SetManXTicks(self, ax: plt.Axes, xticks: Union[List[float], Dict[float, str]]):
         if xticks is None:
             return
 
-        if xticks is list[float]:
+        if isinstance(xticks, list[float]):
             ax.set_xticks(xticks)
         else:
             ax.set_xticks(list(xticks.keys()))
             ax.set_xticklabels(list(xticks.values()))
 
-    def _SetManYTicks(ax: plt.Axes, yticks: Union[List[float], Dict[float, str]]):
+    def _SetManYTicks(self, ax: plt.Axes, yticks: Union[List[float], Dict[float, str]]):
         if yticks is None:
             return
 
-        if yticks is list[float]:
+        if isinstance(yticks, list[float]):
             ax.set_yticks(yticks)
         else:
             ax.set_yticks(list(yticks.keys()))
             ax.set_yticklabels(list(yticks.values()))
 
     def AddEntry(self, entry: Union[XY_PlotEntry, XY2_PlotEntry]) -> None:
-        if entry is XY_PlotEntry:
+        if isinstance(entry, XY_PlotEntry):
             self.entries_xy.append(entry)
-        elif entry is XY2_PlotEntry:
+        elif isinstance(entry, XY2_PlotEntry):
             self.entries_xy2.append(entry)
 
     def Plot_XY(
@@ -173,46 +180,49 @@ class GraphMaker():
             y_ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition: Legend.Position = Legend.Position.Best) -> None:
 
+        self._ax1 = self._fig.add_subplot(111)
         i: int = 0
         for e in self.entries_xy:
             if e.disable:
                 continue
 
             show_legend = False
-            color = self._GetColor(e.color, e.groupid, i)
+            color = self._GetColor(self.entries_xy, i)
             if e.name is None:
                 self._ax1.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
             else:
                 self._ax1.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
                 show_legend = True
 
-            # Axis Settings
-            self._ax1.grid(self._grid[0])
-            axtype = self._Int2AxisType(axistype, 2) if axistype is int else axistype
-            self._ax1.set_xscale(axtype[0].Value())
-            self._ax1.set_yscale(axtype[1].Value())
-
-            plt.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
-
-            # Legend
-            if show_legend:
-                le = Legend.Legend()
-                le.set_legend(self._ax1, self._leg[0][0], self._leg[0][1], legposition)
-
-            # Plotting Limit
-            self._SetXLimit(self._ax1, x_region[0], x_region[1])
-            self._SetYLimit(self._ax1, y_region[0], y_region[1])
-
-            # Ticks
-            self._SetManXTicks(self._ax1, x_ticks)
-            self._SetManYTicks(self._ax1, y_ticks)
-
-            # Label
-            self._ax1.set_xlabel(axisname[0])
-            self._ax1.set_ylabel(axisname[1])
-
             i += 1
-        return
+
+        # Axis Settings
+        self._ax1.grid(self._grid[0])
+        axtype = self._Int2AxisType(axistype, 2) if isinstance(axistype, int) else axistype
+        self._ax1.set_xscale(axtype[0].Value())
+        self._ax1.set_yscale(axtype[1].Value())
+
+        plt.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
+
+        # Legend
+        if show_legend:
+            le = Legend.Legend()
+            self._leg_xy = self._ax1.get_legend_handles_labels()
+            le.set_legend(self._ax1, self._leg_xy[0], self._leg_xy[1], legposition)
+
+        # Plotting Limit
+        self._SetXLimit(self._ax1, x_region[0], x_region[1])
+        self._SetYLimit(self._ax1, y_region[0], y_region[1])
+
+        # Ticks
+        self._SetManXTicks(self._ax1, x_ticks)
+        self._SetManYTicks(self._ax1, y_ticks)
+
+        # Label
+        self._ax1.set_xlabel(axisname[0])
+        self._ax1.set_ylabel(axisname[1])
+
+        self._fig.savefig(self.path)
 
     def Plot_XY2(
             self,
@@ -223,4 +233,8 @@ class GraphMaker():
             axistype: Union[int, tuple[AxisType, AxisType, AxisType]] = 111,
             ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition=None):
+
+        self._ax1 = self._fig.add_subplot(111)
+        self._ax2 = self._ax1.twinx()
+
         return

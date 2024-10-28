@@ -20,6 +20,9 @@ class Position(IntEnum):
 
 
 class Legend:
+    _le_pos = None
+    _bbox_anchor = None
+
     @property
     def LegendPos(self):
         return self._le_pos
