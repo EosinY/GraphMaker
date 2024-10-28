@@ -15,6 +15,7 @@ class PointType(Enum):
     Square = "s"
     Cross = "x"
     Plus = "+"
+    Blank = ""
 
     def Value(e):
         return e.value
@@ -26,6 +27,7 @@ class LineType(Enum):
     Dash = "--"
     DashDot = "-."
     Dot = ":"
+    Blank = ""
 
     def Value(e):
         return e.value
@@ -52,8 +54,8 @@ class XY_PlotEntry:
             x_data: list, y_data: list, name: str, *,
             groupid: str = None,
             color: str = None,
-            point: Union[PointType, tuple[PointType, float]] = (PointType.Circle, 1),
-            line: Union[LineType, tuple[LineType, float]] = (LineType.Solid, 1.5),
+            point: Union[PointType, tuple[PointType, float]] = None,
+            line: Union[LineType, tuple[LineType, float]] = None,
             disable: bool = False):
 
         self.x_data = x_data
@@ -65,21 +67,21 @@ class XY_PlotEntry:
         self.disable = disable
 
         self.color = color
-        self.pointtype = None
-        self.pointsize = None
+        self.pointtype = PointType.Blank if point is None and line is not None else PointType.Circle
+        self.pointsize = 4
         if isinstance(point, PointType):
-            self.pointtype = point.value
+            self.pointtype = self.pointtype.value if point is None else point.value
         else:
-            self.pointtype = point[0].value
-            self.pointsize = point[1]
+            self.pointtype = self.pointtype.value if point is None else point[0].value
+            self.pointsize = self.pointsize if point is None else point[1]
 
-        self.linetype = None
-        self.linewidth = None
-        if line is LineType:
-            self.linetype = line.value
+        self.linetype = LineType.Blank if line is None and point is not None else LineType.Solid
+        self.linewidth = 1.5
+        if isinstance(line, LineType):
+            self.linetype = self.linetype.value if line is None else line.value
         else:
-            self.linetype = line[0].value
-            self.linewidth = line[1]
+            self.linetype = self.linetype.value if line is None else line[0].value
+            self.linewidth = self.linewidth if line is None else line[1]
 
 
 class XY2_PlotEntry(XY_PlotEntry):
@@ -98,9 +100,10 @@ class GraphMaker():
     _colorscm: List[str] = Colors.gnuplot_colors_1
 
     _fig = plt.figure()
-    _ax1 = _fig.add_subplot(111)
-    _ax2 = _ax1.twinx()
-    _leg = [(_ax1.get_legend_handles_labels()), (_ax2.get_legend_handles_labels())]
+    _ax1 = None
+    _ax2 = None
+    _leg_xy = None
+    _leg_xy2 = None
 
     def __init__(self, path: str):
         self.path = path
@@ -177,6 +180,7 @@ class GraphMaker():
             y_ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition: Legend.Position = Legend.Position.Best) -> None:
 
+        self._ax1 = self._fig.add_subplot(111)
         i: int = 0
         for e in self.entries_xy:
             if e.disable:
@@ -203,7 +207,8 @@ class GraphMaker():
         # Legend
         if show_legend:
             le = Legend.Legend()
-            le.set_legend(self._ax1, self._leg[0][0], self._leg[0][1], legposition)
+            self._leg_xy = self._ax1.get_legend_handles_labels()
+            le.set_legend(self._ax1, self._leg_xy[0], self._leg_xy[1], legposition)
 
         # Plotting Limit
         self._SetXLimit(self._ax1, x_region[0], x_region[1])
@@ -228,4 +233,8 @@ class GraphMaker():
             axistype: Union[int, tuple[AxisType, AxisType, AxisType]] = 111,
             ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition=None):
+
+        self._ax1 = self._fig.add_subplot(111)
+        self._ax2 = self._ax1.twinx()
+
         return
