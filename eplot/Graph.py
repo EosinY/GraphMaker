@@ -186,33 +186,34 @@ class GraphMaker():
                 self._ax1.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
                 show_legend = True
 
-            # Axis Settings
-            self._ax1.grid(self._grid[0])
-            axtype = self._Int2AxisType(axistype, 2) if axistype is int else axistype
-            self._ax1.set_xscale(axtype[0].Value())
-            self._ax1.set_yscale(axtype[1].Value())
-
-            plt.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
-
-            # Legend
-            if show_legend:
-                le = Legend.Legend()
-                le.set_legend(self._ax1, self._leg[0][0], self._leg[0][1], legposition)
-
-            # Plotting Limit
-            self._SetXLimit(self._ax1, x_region[0], x_region[1])
-            self._SetYLimit(self._ax1, y_region[0], y_region[1])
-
-            # Ticks
-            self._SetManXTicks(self._ax1, x_ticks)
-            self._SetManYTicks(self._ax1, y_ticks)
-
-            # Label
-            self._ax1.set_xlabel(axisname[0])
-            self._ax1.set_ylabel(axisname[1])
-
             i += 1
-        return
+
+        # Axis Settings
+        self._ax1.grid(self._grid[0])
+        axtype = self._Int2AxisType(axistype, 2) if axistype is int else axistype
+        self._ax1.set_xscale(axtype[0].Value())
+        self._ax1.set_yscale(axtype[1].Value())
+
+        plt.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
+
+        # Legend
+        if show_legend:
+            le = Legend.Legend()
+            le.set_legend(self._ax1, self._leg[0][0], self._leg[0][1], legposition)
+
+        # Plotting Limit
+        self._SetXLimit(self._ax1, x_region[0], x_region[1])
+        self._SetYLimit(self._ax1, y_region[0], y_region[1])
+
+        # Ticks
+        self._SetManXTicks(self._ax1, x_ticks)
+        self._SetManYTicks(self._ax1, y_ticks)
+
+        # Label
+        self._ax1.set_xlabel(axisname[0])
+        self._ax1.set_ylabel(axisname[1])
+
+        self._fig.savefig(self.path)
 
     def Plot_XY2(
             self,
