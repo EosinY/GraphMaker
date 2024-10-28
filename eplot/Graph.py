@@ -65,16 +65,20 @@ class XY_PlotEntry:
         self.disable = disable
 
         self.color = color
-        if point is PointType:
-            self.pointtype = point
+        self.pointtype = None
+        self.pointsize = None
+        if isinstance(point, PointType):
+            self.pointtype = point.value
         else:
-            self.pointtype = point[0]
+            self.pointtype = point[0].value
             self.pointsize = point[1]
 
+        self.linetype = None
+        self.linewidth = None
         if line is LineType:
-            self.linetype = line
+            self.linetype = line.value
         else:
-            self.linetype = line[0]
+            self.linetype = line[0].value
             self.linewidth = line[1]
 
 
@@ -86,8 +90,8 @@ class XY2_PlotEntry(XY_PlotEntry):
 
 
 class GraphMaker():
-    entries_xy: list[XY_PlotEntry]
-    entries_xy2: list[XY2_PlotEntry]
+    entries_xy: list[XY_PlotEntry] = []
+    entries_xy2: list[XY2_PlotEntry] = []
 
     _grid: tuple[bool] = (True, False)
     _margin: tuple[float] = (0.125, 0.875, 0.125, 0.9)
@@ -101,14 +105,14 @@ class GraphMaker():
     def __init__(self, path: str):
         self.path = path
 
-    def _Int2AxisType(i: int, l: int) -> Union[tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]]:
+    def _Int2AxisType(self, i: int, l: int) -> Union[tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]]:
         al = []
         s = str(i)
         if len(s) < l:
             raise TypeError("axes type defining int digit is shorter than desired.")
 
         for j in range(l):
-            al.append(s[j])
+            al.append(AxisType.ToEnum(s[j]))
 
         return tuple(al)
 
@@ -125,19 +129,19 @@ class GraphMaker():
         else:
             raise ("are you serious? my brain is gonna crash into fucking cream bruh(by me coding @2:30am)")
 
-    def _SetXLimit(ax: plt.Axes, lower: float, upper: float) -> None:
+    def _SetXLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
         if upper is not None:
             ax.set_xlim(left=upper)
         if lower is not None:
             ax.set_xlim(right=lower)
 
-    def _SetYLimit(ax: plt.Axes, lower: float, upper: float) -> None:
+    def _SetYLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
         if upper is not None:
             ax.set_ylim(top=upper)
         if lower is not None:
             ax.set_ylim(bottom=lower)
 
-    def _SetManXTicks(ax: plt.Axes, xticks: Union[List[float], Dict[float, str]]):
+    def _SetManXTicks(self, ax: plt.Axes, xticks: Union[List[float], Dict[float, str]]):
         if xticks is None:
             return
 
@@ -147,7 +151,7 @@ class GraphMaker():
             ax.set_xticks(list(xticks.keys()))
             ax.set_xticklabels(list(xticks.values()))
 
-    def _SetManYTicks(ax: plt.Axes, yticks: Union[List[float], Dict[float, str]]):
+    def _SetManYTicks(self, ax: plt.Axes, yticks: Union[List[float], Dict[float, str]]):
         if yticks is None:
             return
 
@@ -179,7 +183,7 @@ class GraphMaker():
                 continue
 
             show_legend = False
-            color = self._GetColor(e.color, e.groupid, i)
+            color = self._GetColor(self.entries_xy, i)
             if e.name is None:
                 self._ax1.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
             else:
@@ -190,7 +194,7 @@ class GraphMaker():
 
         # Axis Settings
         self._ax1.grid(self._grid[0])
-        axtype = self._Int2AxisType(axistype, 2) if axistype is int else axistype
+        axtype = self._Int2AxisType(axistype, 2) if isinstance(axistype, int) else axistype
         self._ax1.set_xscale(axtype[0].Value())
         self._ax1.set_yscale(axtype[1].Value())
 
