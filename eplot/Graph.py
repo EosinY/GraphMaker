@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 from typing import Final, Union, Dict, List, Tuple
 from enum import Enum, unique
 
-import Colors
-import Legend
+from . import Colors
+from . import Legend
 
 
 @unique
@@ -141,7 +141,7 @@ class GraphMaker():
         if xticks is None:
             return
 
-        if xticks is list[float]:
+        if isinstance(xticks, list[float]):
             ax.set_xticks(xticks)
         else:
             ax.set_xticks(list(xticks.keys()))
@@ -151,16 +151,16 @@ class GraphMaker():
         if yticks is None:
             return
 
-        if yticks is list[float]:
+        if isinstance(yticks, list[float]):
             ax.set_yticks(yticks)
         else:
             ax.set_yticks(list(yticks.keys()))
             ax.set_yticklabels(list(yticks.values()))
 
     def AddEntry(self, entry: Union[XY_PlotEntry, XY2_PlotEntry]) -> None:
-        if entry is XY_PlotEntry:
+        if isinstance(entry, XY_PlotEntry):
             self.entries_xy.append(entry)
-        elif entry is XY2_PlotEntry:
+        elif isinstance(entry, XY2_PlotEntry):
             self.entries_xy2.append(entry)
 
     def Plot_XY(
