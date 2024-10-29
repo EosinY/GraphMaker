@@ -48,12 +48,11 @@ class AxisType(Enum):
             return AxisType.Log
 
 
-class XY_PlotEntry:
+class XY_PlotEntry(object):
     def __init__(
             self,
-            x_data: list, y_data: list, name: str, *,
-            groupid: str = None,
-            color: str = None,
+            x_data: list[float], y_data: list[float], name: str, *,
+            groupid: str = None, color: str = None,
             point: Union[PointType, tuple[PointType, float]] = None,
             line: Union[LineType, tuple[LineType, float]] = None,
             disable: bool = False):
@@ -85,25 +84,33 @@ class XY_PlotEntry:
 
 
 class XY2_PlotEntry(XY_PlotEntry):
-    def __init__(self, x_data, y_data, y2_data, name, *, groupid=None, color=None, point=(PointType.Circle, 1), line=(LineType.Solid, 1.5), disable):
-        super().__init__(x_data, y_data, name, groupid=groupid, color=color, point=point, line=line, disable=disable)
-
-        self.y2_data = y2_data
+    def __init__(
+            self,
+            x_data: list[float], y2_data: list[float], name: str, *,
+            groupid: str = None, color: str = None,
+            point: Union[PointType, Tuple[PointType, float]] = None,
+            line: Union[LineType, Tuple[LineType, float]] = None,
+            disable=False):
+        super().__init__(x_data, y2_data, name, groupid=groupid, color=color, point=point, line=line, disable=disable)
 
 
 class GraphMaker():
     entries_xy: list[XY_PlotEntry] = []
     entries_xy2: list[XY2_PlotEntry] = []
 
+    # Grid enable (x-y, x-y2)
     _grid: tuple[bool] = (True, False)
-    _margin: tuple[float] = (0.125, 0.875, 0.125, 0.9)
+    # Graph margin (I think this param will be good)
+    _margin: tuple[float] = (0.125, 0.85, 0.125, 0.875)
+    # Colorscheme (You can add any schemes by adding list[str] in Colors.py)
     _colorscm: List[str] = Colors.gnuplot_colors_1
 
-    _fig = plt.figure()
+    # plot objects (You can access even outside the class to control more (but bad method  should replace with something good ones))
+    _fig = None
     _ax1 = None
     _ax2 = None
-    _leg_xy = None
-    _leg_xy2 = None
+    _leg_xy = ([], [])
+    _leg_xy2 = ([], [])
 
     def __init__(self, path: str):
         self.path = path
@@ -120,6 +127,8 @@ class GraphMaker():
         return tuple(al)
 
     def _GetColor(self, ent: Union[List[XY_PlotEntry], List[XY2_PlotEntry]], idx: int) -> str:
+        # None -> pick color from defined colorscheme and change one by one
+        # same group id -> pick the color that is same previous plot color
         if ent[idx].color is not None:
             return ent[idx].color
         elif ent[idx].color is None and idx == 0:
@@ -165,76 +174,114 @@ class GraphMaker():
             ax.set_yticklabels(list(yticks.values()))
 
     def AddEntry(self, entry: Union[XY_PlotEntry, XY2_PlotEntry]) -> None:
-        if isinstance(entry, XY_PlotEntry):
+        if entry.__class__.__name__ == XY_PlotEntry.__name__:
             self.entries_xy.append(entry)
-        elif isinstance(entry, XY2_PlotEntry):
+        elif entry.__class__.__name__ == XY2_PlotEntry.__name__:
             self.entries_xy2.append(entry)
 
     def Plot_XY(
             self,
-            axisname: tuple[str, str],
-            axistype: Union[int, tuple[AxisType, AxisType]] = 11,
-            x_region: tuple[float, float] = (None, None),
-            y_region: tuple[float, float] = (None, None),
-            x_ticks: Union[list[float], list[Dict[float, str]]] = None,
-            y_ticks: Union[list[float], list[Dict[float, str]]] = None,
-            legposition: Legend.Position = Legend.Position.Best) -> None:
-
-        self._ax1 = self._fig.add_subplot(111)
-        i: int = 0
-        for e in self.entries_xy:
-            if e.disable:
-                continue
-
-            show_legend = False
-            color = self._GetColor(self.entries_xy, i)
-            if e.name is None:
-                self._ax1.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
-            else:
-                self._ax1.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
-                show_legend = True
-
-            i += 1
-
-        # Axis Settings
-        self._ax1.grid(self._grid[0])
-        axtype = self._Int2AxisType(axistype, 2) if isinstance(axistype, int) else axistype
-        self._ax1.set_xscale(axtype[0].Value())
-        self._ax1.set_yscale(axtype[1].Value())
-
-        plt.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
-
-        # Legend
-        if show_legend:
-            le = Legend.Legend()
-            self._leg_xy = self._ax1.get_legend_handles_labels()
-            le.set_legend(self._ax1, self._leg_xy[0], self._leg_xy[1], legposition)
-
-        # Plotting Limit
-        self._SetXLimit(self._ax1, x_region[0], x_region[1])
-        self._SetYLimit(self._ax1, y_region[0], y_region[1])
-
-        # Ticks
-        self._SetManXTicks(self._ax1, x_ticks)
-        self._SetManYTicks(self._ax1, y_ticks)
-
-        # Label
-        self._ax1.set_xlabel(axisname[0])
-        self._ax1.set_ylabel(axisname[1])
-
-        self._fig.savefig(self.path)
-
-    def Plot_XY2(
-            self,
-            axisname: tuple[str, str, str],
+            axisname: Union[tuple[str, str], tuple[str, str, str]] = ("", "", ""),
+            axistype: Union[int, tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]] = 111,
             x_region: tuple[float, float] = (None, None),
             y_region: tuple[float, float] = (None, None),
             y2_region: tuple[float, float] = (None, None),
-            axistype: Union[int, tuple[AxisType, AxisType, AxisType]] = 111,
-            ticks: Union[list[float], list[Dict[float, str]]] = None,
-            legposition=None):
+            x_ticks: Union[list[float], list[Dict[float, str]]] = None,
+            y_ticks: Union[list[float], list[Dict[float, str]]] = None,
+            y2_ticks: Union[list[float], list[Dict[float, str]]] = None,
+            legposition: Legend.Position = Legend.Position.Best,
+            aspect: list[int] = None) -> None:
 
-        self._ax1 = self._fig.add_subplot(111)
-        self._ax2 = self._ax1.twinx()
+        self._fig = plt.figure(figsize=aspect)
 
-        return
+        show_legend = False
+        # Plotting x-y axis
+        if len(self.entries_xy) > 0:
+            self._ax1 = self._fig.add_subplot(111)
+
+            i: int = 0
+            show_legend_xy = False
+            for e in self.entries_xy:
+                if e.disable:
+                    continue
+
+                color = self._GetColor(self.entries_xy, i)
+                if e.name is None:
+                    self._ax1.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                else:
+                    self._ax1.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                    show_legend = True
+                    show_legend_xy = True
+
+                i += 1
+
+            # Axis Settings
+            self._ax1.grid(self._grid[0])
+            axtype = self._Int2AxisType(axistype, 2) if isinstance(axistype, int) else axistype
+            self._ax1.set_xscale(axtype[0].Value())
+            self._ax1.set_yscale(axtype[1].Value())
+
+            # Legend
+            if show_legend_xy:
+                self._leg_xy = self._ax1.get_legend_handles_labels()
+
+            # Plotting Limit
+            self._SetXLimit(self._ax1, x_region[0], x_region[1])
+            self._SetYLimit(self._ax1, y_region[0], y_region[1])
+
+            # Ticks
+            self._SetManXTicks(self._ax1, x_ticks)
+            self._SetManYTicks(self._ax1, y_ticks)
+
+            # Label
+            self._ax1.set_xlabel(axisname[0])
+            self._ax1.set_ylabel(axisname[1])
+        else:
+            raise TypeError("x-y plotting is needed.")
+
+        # Plotting x-y2 axis
+        # it should be used with x-y, not x-y2 alone (_ax2 is need to define _ax1 before, so x-y2 only never works just goes fuck)
+        # if you want to plot only x-y2, adding blank XY_PlotEntry to 'entries_xy' will be work??? but there's no worth to do it than just using x-y.
+        if len(self.entries_xy2) > 0:
+            self._ax2 = self._ax1.twinx()
+
+            i: int = 0
+            show_legend_xy2 = False
+            for e in self.entries_xy2:
+                if e.disable:
+                    continue
+
+                color = self._GetColor(self.entries_xy2, i)
+                if e.name is None:
+                    self._ax2.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                else:
+                    self._ax2.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                    show_legend = True
+                    show_legend_xy2 = True
+
+                i += 1
+
+            # Axis Settings
+            self._ax2.grid(self._grid[1])
+            axtype = self._Int2AxisType(axistype, 3) if isinstance(axistype, int) else axistype
+            self._ax2.set_yscale(axtype[2].Value())
+
+            # Legend
+            if show_legend_xy2:
+                self._leg_xy2 = self._ax2.get_legend_handles_labels()
+
+            # Plotting Limit
+            self._SetYLimit(self._ax2, y2_region[0], y2_region[1])
+
+            # Ticks
+            self._SetManYTicks(self._ax2, y2_ticks)
+
+            # Label
+            self._ax2.set_ylabel(axisname[2])
+
+        if show_legend:
+            le = Legend.Legend()
+            le.set_legend(self._ax1, self._leg_xy[0] + self._leg_xy2[0], self._leg_xy[1] + self._leg_xy2[1], legposition, len(self.entries_xy2) > 0)
+
+        self._fig.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
+        self._fig.savefig(self.path, bbox_inches='tight')
