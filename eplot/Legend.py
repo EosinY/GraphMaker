@@ -42,7 +42,7 @@ class Legend:
         else:
             self._le_pos = value
 
-    def set_legend(self, axes, handle, label, loc: Union[int, Position], y2mode: bool = False):
+    def set_legend(self, axes: plt.Axes, handle: list, label: list, loc: Union[int, Position], y2mode: bool = False):
         self.y2mode = y2mode
         self.LegendPos = loc
         if int(loc) <= 10:

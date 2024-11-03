@@ -1,9 +1,19 @@
 import matplotlib.pyplot as plt
 from typing import Final, Union, Dict, List, Tuple
-from enum import Enum, unique
+from enum import Enum, Flag, auto, unique
+import numpy as np
 
 from . import Colors
 from . import Legend
+
+
+@unique
+class Switches(Flag):
+    Blank = auto()
+    Square_XY = auto()
+    Square_XY2 = auto()
+    DoNotSave = auto()
+    Square = Square_XY | Square_XY2
 
 
 @unique
@@ -98,6 +108,8 @@ class GraphMaker():
     entries_xy: list[XY_PlotEntry] = []
     entries_xy2: list[XY2_PlotEntry] = []
 
+    setings: dict = {}
+
     # Grid enable (x-y, x-y2)
     _grid: tuple[bool] = (True, False)
     # Graph margin (I think this param will be good)
@@ -179,7 +191,7 @@ class GraphMaker():
         elif entry.__class__.__name__ == XY2_PlotEntry.__name__:
             self.entries_xy2.append(entry)
 
-    def Plot_XY(
+    def Plot(
             self,
             axisname: Union[tuple[str, str], tuple[str, str, str]] = ("", "", ""),
             axistype: Union[int, tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]] = 111,
@@ -190,7 +202,9 @@ class GraphMaker():
             y_ticks: Union[list[float], list[Dict[float, str]]] = None,
             y2_ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition: Legend.Position = Legend.Position.Best,
-            aspect: list[int] = None) -> None:
+            aspect: list[int] = [6, 6],
+            switch: Switches = Switches.Blank,
+            path: str = "") -> None:
 
         self._fig = plt.figure(figsize=aspect)
 
@@ -236,6 +250,8 @@ class GraphMaker():
             # Label
             self._ax1.set_xlabel(axisname[0])
             self._ax1.set_ylabel(axisname[1])
+
+            self._ax1.set_aspect("equal" if Switches.Square_XY in switch else "auto")
         else:
             raise TypeError("x-y plotting is needed.")
 
@@ -279,9 +295,16 @@ class GraphMaker():
             # Label
             self._ax2.set_ylabel(axisname[2])
 
+            self._ax2.set_aspect("equal" if Switches.Square_XY2 in switch else "auto")
+
         if show_legend:
             le = Legend.Legend()
-            le.set_legend(self._ax1, self._leg_xy[0] + self._leg_xy2[0], self._leg_xy[1] + self._leg_xy2[1], legposition, len(self.entries_xy2) > 0)
+            le.set_legend(self._ax1 if self._ax2 is None else self._ax2, self._leg_xy[0] + self._leg_xy2[0], self._leg_xy[1] + self._leg_xy2[1], legposition, len(self.entries_xy2) > 0)
 
         self._fig.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
-        self._fig.savefig(self.path, bbox_inches='tight')
+
+        if Switches.DoNotSave not in switch:
+            self._fig.savefig(path if self.path == "" else self.path, bbox_inches='tight')
+
+    def SaveFig(self, path: str = ""):
+        self._fig.savefig(path if self.path == "" else self.path, bbox_inches="tight")
