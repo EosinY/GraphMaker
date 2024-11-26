@@ -126,6 +126,8 @@ class GraphMaker():
 
     def __init__(self, path: str):
         self.path = path
+        self.entries_xy = []
+        self.entries_xy2 = []
 
     def _Int2AxisType(self, i: int, l: int) -> Union[tuple[AxisType, AxisType], tuple[AxisType, AxisType, AxisType]]:
         al = []
@@ -169,7 +171,7 @@ class GraphMaker():
         if xticks is None:
             return
 
-        if isinstance(xticks, list[float]):
+        if isinstance(xticks, list):
             ax.set_xticks(xticks)
         else:
             ax.set_xticks(list(xticks.keys()))
@@ -179,7 +181,7 @@ class GraphMaker():
         if yticks is None:
             return
 
-        if isinstance(yticks, list[float]):
+        if isinstance(yticks, list):
             ax.set_yticks(yticks)
         else:
             ax.set_yticks(list(yticks.keys()))
