@@ -18,3 +18,15 @@ gnuplot_colors_2: Final[List[str]] = [
     "#b8860b",
     "#ffa500"
 ]
+muted_colors: Final[List[str]] = [
+    "#332288",
+    "#88CCEE",
+    "#44AA99",
+    "#117733",
+    "#999933",
+    "#DDCC77",
+    "#CC6677",
+    "#882255",
+    "#AA4499",
+    "#DDDDDD"
+]
