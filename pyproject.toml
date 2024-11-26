@@ -1,0 +1,19 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "eplot"
+version = "1.0.1"
+authors = [  { name="EosinY" },]
+description = "Graph Tool"
+license = {text = "MIT License"}
+requires-python = ">=3.9.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    ]
+dependencies = [
+    "matplotlib"
+]
