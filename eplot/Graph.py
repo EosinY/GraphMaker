@@ -13,6 +13,7 @@ class Switches(Flag):
     Square_XY = auto()
     Square_XY2 = auto()
     DoNotSave = auto()
+    XY2ColorCont = auto()  # XY軸の色設定を続きでXY2軸に適用する
     Square = Square_XY | Square_XY2
 
 
@@ -143,6 +144,12 @@ class GraphMaker():
     def _GetColor(self, ent: Union[List[XY_PlotEntry], List[XY2_PlotEntry]], idx: int) -> str:
         # None -> pick color from defined colorscheme and change one by one
         # same group id -> pick the color that is same previous plot color
+
+        i = idx if idx < len(self._colorscm) else idx % len(self._colorscm)
+
+        if len(ent) < (idx % len(self._colorscm)) + 1:
+            return self._colorscm[i]
+
         if ent[idx].color is not None:
             return ent[idx].color
         elif ent[idx].color is None and idx == 0:
@@ -210,6 +217,9 @@ class GraphMaker():
 
         self._fig = plt.figure(figsize=aspect)
 
+        last_ind_xy = 0
+        is_count_xy2_continus = True
+
         show_legend = False
         # Plotting x-y axis
         if len(self.entries_xy) > 0:
@@ -230,6 +240,7 @@ class GraphMaker():
                     show_legend_xy = True
 
                 i += 1
+            last_ind_xy = i
 
             # Axis Settings
             self._ax1.grid(self._grid[0])
@@ -269,11 +280,11 @@ class GraphMaker():
                 if e.disable:
                     continue
 
-                color = self._GetColor(self.entries_xy2, i)
+                color_xy2 = self._GetColor(self.entries_xy2, last_ind_xy + i) if Switches.XY2ColorCont in switch else self._GetColor(self.entries_xy2, i)
                 if e.name is None:
-                    self._ax2.plot(e.x_data, e.y_data, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                    self._ax2.plot(e.x_data, e.y_data, color=color_xy2, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
                 else:
-                    self._ax2.plot(e.x_data, e.y_data, label=e.name, color=color, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
+                    self._ax2.plot(e.x_data, e.y_data, label=e.name, color=color_xy2, marker=e.pointtype, markersize=e.pointsize, linestyle=e.linetype, linewidth=e.linewidth)
                     show_legend = True
                     show_legend_xy2 = True
 
