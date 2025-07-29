@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 from typing import Final, Union, Dict, List, Tuple
 from enum import Enum, Flag, auto, unique
 import numpy as np
+from matplotlib.axes import Axes
 
 from . import Colors
 from . import Legend
@@ -206,7 +207,7 @@ class GraphMaker():
             legposition: Legend.Position = Legend.Position.Best,
             aspect: list[int] = [6, 6],
             switch: Switches = Switches.Blank,
-            path: str = "") -> None:
+            path: str = "") -> tuple[Axes, Axes]:
 
         self._fig = plt.figure(figsize=aspect)
 
@@ -308,5 +309,8 @@ class GraphMaker():
         if Switches.DoNotSave not in switch:
             self._fig.savefig(path if self.path == "" else self.path, bbox_inches='tight')
 
-    def SaveFig(self, path: str = ""):
+        return (self._ax1, self._ax2)
+
+    def SaveFig(self, figpath: str = ""):
+        path = figpath if len(figpath) > 0 else self.path
         self._fig.savefig(path if self.path == "" else self.path, bbox_inches="tight")
