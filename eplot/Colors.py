@@ -18,6 +18,15 @@ gnuplot_colors_2: Final[List[str]] = [
     "#b8860b",
     "#ffa500"
 ]
+universal_colors: Final[List[str]] = [
+    "#FF4B00",
+    "#005AFF",
+    "#03AF7A",
+    "#4DC4FF",
+    "#F6AA00",
+    "#D50AB0",
+    "#101010"
+]
 muted_colors: Final[List[str]] = [
     "#332288",
     "#88CCEE",
@@ -32,7 +41,7 @@ muted_colors: Final[List[str]] = [
 ]
 
 
-def get_color_variant(color_l: list[str], count: int, start: int = 0, sub_val: tuple[int, int, int] = (0x30, 0x30, 0x30)):
+def get_color_variant(color_l: list[str], count: int, start: int = 0, mlt_val: tuple[float, float, float] = (0.7, 0.7, 0.7)):
     color_l = color_l[start:count]
     mcolor_l = []
 
@@ -40,12 +49,12 @@ def get_color_variant(color_l: list[str], count: int, start: int = 0, sub_val: t
     mask_shifts = [16, 8, 0]
     for color in color_nums:
         color_rgb = [(color & (0xFF << i)) >> i for i in mask_shifts]
-        mod_clrgb = [color_rgb[i] - sub_val[i] if color_rgb[i] - sub_val[i] >= 0 else 0 for i in range(len(color_rgb))]
+        mod_clrgb = [int(color_rgb[i] * mlt_val[i]) for i in range(len(color_rgb))]
         mcolor = 0
         for i in range(len(mod_clrgb)):
             c = mod_clrgb[i]
             mcolor |= c << mask_shifts[i]
 
-        mcolor_l.append("#" + hex(mcolor).lstrip("0x"))
+        mcolor_l.append("#" + "{:06x}".format(mcolor))
 
     return color_l + mcolor_l
