@@ -111,6 +111,10 @@ class GraphMaker():
 
     setings: dict = {}
 
+    # Font Size
+    fontfamily = "DejaVu Sans"
+    fontsize = 15
+
     # Grid enable (x-y, x-y2)
     _grid: tuple[bool] = (True, False)
     # Graph margin (I think this param will be good)
@@ -157,10 +161,10 @@ class GraphMaker():
             raise ("are you serious? my brain is gonna crash into fucking cream bruh(by me coding @2:30am)")
 
     def _SetXLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
-        if upper is not None:
-            ax.set_xlim(left=upper)
         if lower is not None:
-            ax.set_xlim(right=lower)
+            ax.set_xlim(left=lower)
+        if upper is not None:
+            ax.set_xlim(right=upper)
 
     def _SetYLimit(self, ax: plt.Axes, lower: float, upper: float) -> None:
         if upper is not None:
@@ -205,11 +209,17 @@ class GraphMaker():
             y_ticks: Union[list[float], list[Dict[float, str]]] = None,
             y2_ticks: Union[list[float], list[Dict[float, str]]] = None,
             legposition: Legend.Position = Legend.Position.Best,
-            aspect: list[int] = [6, 6],
+            aspect: list[int] = [-1, -1],
             switch: Switches = Switches.Blank,
             path: str = "") -> tuple[Axes, Axes]:
 
-        self._fig = plt.figure(figsize=aspect)
+        plt.rcParams["font.family"] = self.fontfamily
+        plt.rcParams["font.size"] = self.fontsize
+
+        if -1 in aspect:
+            self._fig = plt.figure()
+        else:
+            self._fig = plt.figure(figsize=aspect)
 
         show_legend = False
         # Plotting x-y axis
@@ -254,9 +264,13 @@ class GraphMaker():
             self._ax1.set_xlabel(axisname[0])
             self._ax1.set_ylabel(axisname[1])
 
-            self._ax1.set_aspect("equal" if Switches.Square_XY in switch else "auto")
+            if Switches.Square_XY in switch:
+                self._ax1.set_aspect(1.0 / self._ax1.get_data_ratio(), adjustable="box")
+            else:
+                self._ax1.set_aspect("auto")
         else:
-            raise TypeError("x-y plotting is needed.")
+            print("Illegal data")
+            return
 
         # Plotting x-y2 axis
         # it should be used with x-y, not x-y2 alone (_ax2 is need to define _ax1 before, so x-y2 only never works just goes fuck)
@@ -313,4 +327,5 @@ class GraphMaker():
 
     def SaveFig(self, figpath: str = ""):
         path = figpath if len(figpath) > 0 else self.path
+        self._fig.tight_layout()
         self._fig.savefig(path if self.path == "" else self.path, bbox_inches="tight")
