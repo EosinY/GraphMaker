@@ -114,6 +114,7 @@ class GraphMaker():
     # Font Size
     fontfamily = "DejaVu Sans"
     fontsize = 15
+    legfsize = Legend.LegFontSize.M
 
     # Grid enable (x-y, x-y2)
     _grid: tuple[bool] = (True, False)
@@ -316,7 +317,7 @@ class GraphMaker():
 
         if show_legend:
             le = Legend.Legend()
-            le.set_legend(self._ax1 if self._ax2 is None else self._ax2, self._leg_xy[0] + self._leg_xy2[0], self._leg_xy[1] + self._leg_xy2[1], legposition, len(self.entries_xy2) > 0)
+            le.set_legend(self._ax1 if self._ax2 is None else self._ax2, self._leg_xy[0] + self._leg_xy2[0], self._leg_xy[1] + self._leg_xy2[1], legposition, fsize=self.legfsize, y2mode=len(self.entries_xy2) > 0)
 
         self._fig.subplots_adjust(left=self._margin[0], right=self._margin[1], bottom=self._margin[2], top=self._margin[3])
 

@@ -1,5 +1,5 @@
 from typing import Union
-from enum import IntEnum
+from enum import Enum, IntEnum
 import matplotlib.pyplot as plt
 
 
@@ -17,6 +17,16 @@ class Position(IntEnum):
     OutsideUpper = 11
     OutsideCenter = 12
     OutsideLower = 13
+
+
+class LegFontSize(Enum):
+    XXS = "xx-small"
+    XS = "x-small"
+    S = "small"
+    M = "medium"
+    L = "large"
+    XL = "x-large"
+    XXL = "xx-large"
 
 
 class Legend:
@@ -42,10 +52,10 @@ class Legend:
         else:
             self._le_pos = value
 
-    def set_legend(self, axes: plt.Axes, handle: list, label: list, loc: Union[int, Position], y2mode: bool = False):
+    def set_legend(self, axes: plt.Axes, handle: list, label: list, loc: Union[int, Position], fsize: LegFontSize = LegFontSize.M, y2mode: bool = False):
         self.y2mode = y2mode
         self.LegendPos = loc
         if int(loc) <= 10:
-            axes.legend(handle, label, loc=self.LegendPos)
+            axes.legend(handle, label, fontsize=fsize.value, loc=self.LegendPos)
         else:
-            axes.legend(handle, label, loc=self.LegendPos, bbox_to_anchor=self._bbox_anchor, borderaxespad=0)
+            axes.legend(handle, label, fontsize=fsize.value, loc=self.LegendPos, bbox_to_anchor=self._bbox_anchor, borderaxespad=0)
