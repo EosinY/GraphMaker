@@ -41,15 +41,15 @@ muted_colors: Final[List[str]] = [
 ]
 
 
-def get_color_variant(color_l: list[str], count: int, start: int = 0, mlt_val: tuple[float, float, float] = (0.7, 0.7, 0.7)):
-    color_l = color_l[start:count]
+def get_color_variant(color_l: list[str], num: int, start: int = 0, stop: int = -1, mlt_val: tuple[float, float, float] = (0.8, 0.8, 0.8)):
+    color_l = color_l[start:stop]
     mcolor_l = []
 
     color_nums = [int(s.lstrip("#"), 16) for s in color_l]
     mask_shifts = [16, 8, 0]
     for color in color_nums:
         color_rgb = [(color & (0xFF << i)) >> i for i in mask_shifts]
-        mod_clrgb = [int(color_rgb[i] * mlt_val[i]) for i in range(len(color_rgb))]
+        mod_clrgb = [int(color_rgb[i] * (mlt_val[i] / num)) for i in range(len(color_rgb))]
         mcolor = 0
         for i in range(len(mod_clrgb)):
             c = mod_clrgb[i]
@@ -57,4 +57,4 @@ def get_color_variant(color_l: list[str], count: int, start: int = 0, mlt_val: t
 
         mcolor_l.append("#" + "{:06x}".format(mcolor))
 
-    return color_l + mcolor_l
+    return mcolor_l
