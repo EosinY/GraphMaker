@@ -49,7 +49,11 @@ def get_color_variant(color_l: list[str], num: int, start: int = 0, stop: int = 
     mask_shifts = [16, 8, 0]
     for color in color_nums:
         color_rgb = [(color & (0xFF << i)) >> i for i in mask_shifts]
-        mod_clrgb = [int(color_rgb[i] * (mlt_val[i] / num)) for i in range(len(color_rgb))]
+        mod_clrgb = []
+        if num == 0:
+            mod_clrgb = color_rgb
+        else:
+            mod_clrgb = [int(color_rgb[i] * (mlt_val[i] / num)) for i in range(len(color_rgb))]
         mcolor = 0
         for i in range(len(mod_clrgb)):
             c = mod_clrgb[i]
