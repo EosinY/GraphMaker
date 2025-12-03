@@ -3,6 +3,7 @@ from typing import Final, Union, Dict, List, Tuple
 from enum import Enum, Flag, auto, unique
 import numpy as np
 from matplotlib.axes import Axes
+from matplotlib.ticker import ScalarFormatter, AutoMinorLocator
 
 from . import Colors
 from . import Legend
@@ -116,6 +117,8 @@ class GraphMaker():
     fontsize = 15
     legfsize = Legend.LegFontSize.M
 
+    sci_style_th = 1e-2
+
     # Grid enable (x-y, x-y2)
     _grid: tuple[bool] = (True, False)
     # Graph margin (I think this param will be good)
@@ -193,6 +196,26 @@ class GraphMaker():
             ax.set_yticks(list(yticks.keys()))
             ax.set_yticklabels(list(yticks.values()))
 
+    def _SetTickStyle(self, ax: plt.Axes, axis_type: list[AxisType], mode: str):
+        for i in range(len(axis_type)):  # x-y, x-y2
+            m = ""
+            if mode is ["x", "y"]:
+                print("wrong axis val")
+                m = "x" if i == 0 and len(axis_type) > 1 else "y"
+            else:
+                m = mode
+            ax_sel = ax.xaxis if mode == "x" else ax.yaxis
+            if axis_type[i] == AxisType.Linear:
+                ax_sel.set_major_formatter(ScalarFormatter(useMathText=True))
+                ax.ticklabel_format(style="sci", axis=m, scilimits=(0, 0))
+                ax.minorticks_off()
+            elif axis_type[i] == AxisType.Log:
+                ax.yaxis.set_minor_locator(AutoMinorLocator(5))
+
+    def _GetMaxAbsValue(self, data: list[float]):
+        tmp = [abs(v) for v in data]
+        return max(tmp)
+
     def AddEntry(self, entry: Union[XY_PlotEntry, XY2_PlotEntry]) -> None:
         if entry.__class__.__name__ == XY_PlotEntry.__name__:
             self.entries_xy.append(entry)
@@ -249,6 +272,13 @@ class GraphMaker():
             self._ax1.set_xscale(axtype[0].Value())
             self._ax1.set_yscale(axtype[1].Value())
 
+            x_max = self._GetMaxAbsValue(e.x_data)
+            y_max = self._GetMaxAbsValue(e.y_data)
+            if x_max < self.sci_style_th:
+                self._SetTickStyle(self._ax1, [axtype[0]], "x")
+            if y_max < self.sci_style_th:
+                self._SetTickStyle(self._ax1, [axtype[1]], "y")
+
             # Legend
             if show_legend_xy:
                 self._leg_xy = self._ax1.get_legend_handles_labels()
@@ -299,6 +329,10 @@ class GraphMaker():
             self._ax2.grid(self._grid[1])
             axtype = self._Int2AxisType(axistype, 3) if isinstance(axistype, int) else axistype
             self._ax2.set_yscale(axtype[2].Value())
+
+            y2_max = self._GetMaxAbsValue(e.y_data)
+            if y2_max < self.sci_style_th:
+                self._SetTickStyle(self._ax2, [axtype[2]], "y")
 
             # Legend
             if show_legend_xy2:
