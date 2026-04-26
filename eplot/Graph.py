@@ -292,10 +292,10 @@ class GraphMaker():
             self._SetManXTicks(self._ax1, x_ticks)
             self._SetManYTicks(self._ax1, y_ticks)
             if axtype[0] == AxisType.Linear:
-                self._ax1.get_xaxis().get_major_formatter().set_useOffset(False)
+                # self._ax1.get_xaxis().get_major_formatter().set_useOffset(False)
                 self._ax1.get_xaxis().set_major_locator(ticker.MaxNLocator(integer=True))
             if axtype[1] == AxisType.Linear:
-                self._ax1.get_yaxis().get_major_formatter().set_useOffset(False)
+                # self._ax1.get_yaxis().get_major_formatter().set_useOffset(False)
                 self._ax1.get_yaxis().set_major_locator(ticker.MaxNLocator(integer=True))
 
             # Label
